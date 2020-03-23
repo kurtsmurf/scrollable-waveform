@@ -34,20 +34,21 @@ const drawGuides = () => {
 }
 drawGuides()
 
-const drawWaveform = (offset = 0, radius = 10) => {
+const drawWaveform = (offset = 0) => {
   const channel = audio.getChannelData(0)
-  for (i=0;i<canvas.width;i+=radius) {
-    const x = i
-    const amp = channel[i + offset]
-    if (i === 0) console.log(amp)
+  c.lineWidth = 10
+  c.beginPath()
+  c.moveTo(0, channel[offset])
+
+  for (x=0;x<canvas.width;x++) {
+    const amp = channel[x + offset]
     const overhead = canvas.height / 2
     const y = (amp * overhead) + overhead
     
-    c.beginPath()
-    c.arc(x, y, radius, 0, Math.PI * 2, false);
-    // c.fill()
-    c.stroke()
+    c.lineTo(x,y)
   }
+  c.stroke()
+  c.lineWidth = 1
 }
 
 const render = (offset) => {
@@ -87,4 +88,5 @@ canvas.addEventListener('mousewheel', (e) => {
   }
 
   render(offset)
+  e.preventDefault()
 })
