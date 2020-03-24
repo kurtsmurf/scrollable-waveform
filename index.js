@@ -5,70 +5,65 @@ const analyser = audioContext.createAnalyser()
 
 out.connect(comp).connect(analyser).connect(audioContext.destination)
 
-let audio
-
 const canvas = document.querySelector('canvas')
-canvas.width = window.innerWidth
-canvas.height = 300
-
-
 const c = canvas.getContext('2d')
 
-const horizontalGuide = (y, isDashed) => {
-  if (isDashed) {
-    c.setLineDash([5, 15])
-  }
-  
-  c.beginPath()
-  c.moveTo(0, y)
-  c.lineTo(canvas.width, y)
-  c.stroke()
-
-  c.setLineDash([])
-}
-
-const drawGuides = () => {
-  horizontalGuide(0, false)
-  horizontalGuide(canvas.height / 2, true)
-  horizontalGuide(canvas.height, false)
-}
-drawGuides()
-
 const drawWaveform = (offset = 0) => {
-  const channel = audio.getChannelData(0)
+  const channelL = audio.getChannelData(0)
+  
   c.lineWidth = 10
   c.beginPath()
-  c.moveTo(0, channel[offset])
 
-  for (x=0;x<canvas.width;x++) {
-    const amp = channel[x + offset]
-    const overhead = canvas.height / 2
-    const y = (amp * overhead) + overhead
+  for (x=0;x<canvas.width;x+=1) {
+    const amp = channelL[x + offset]
+    const overhead = 150
+    const y = (amp * overhead) + canvas.height - overhead
     
     c.lineTo(x,y)
   }
+
   c.stroke()
-  c.lineWidth = 1
 }
 
+let imageData;
+
 const render = (offset) => {
+
+  // dump canvas contents to image
+  imageData = c.getImageData(0,0,canvas.width,canvas.height)
+  
+  // clear canvas
   c.clearRect(0,0,canvas.width,canvas.height)
-  drawGuides()
+
+  // copy image back into canvas shifted up
+  c.putImageData(imageData,0,-5)
+
+  // overlay a transparent color
+  c.fillStyle = 'rgba(255,255,255,0.01)'
+  c.fillRect(0,0,canvas.width,canvas.height)
+  c.fillStyle = 'black'
+
+  // draw the updated waveform
   drawWaveform(offset)
 }
+
+let audio
 
 fetch('./resonator_clip.wav')
 .then(response => response.arrayBuffer())
 .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
 .then(audioBuffer => {
   audio = audioBuffer
-  drawWaveform()
+  canvas.width = window.innerWidth
+  canvas.height = window.innerHeight
+  render(0)
 })
 
 let offset = 0;
 
 window.onresize = () => {
   canvas.width = window.innerWidth
+  canvas.height = window.innerHeight
   render(offset)
 }
 
